@@ -1,5 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from model.client import Client
+import json
 
 class ListClientsWidget(QtWidgets.QWidget):
 
@@ -104,27 +105,21 @@ class ListClientsWidget(QtWidgets.QWidget):
 
     def deleteClients(self):
         try:
-            f = open('./data/clients.txt', 'r')
-            lines = f.readlines()
-            lines = list(map(lambda x: x.replace('\n', ''), lines))
-            f.close()
+            file = open('./data/clients.json', 'r')
+            file_data = json.load(file)
+            items = list(map(lambda x: x.row(), self.tableWidget.selectedItems()))
+            for v in items:
+                del file_data['clients'][v]
+            file.close()
+            file = open('./data/clients.json', 'w')
+            json.dump(file_data, file, indent=4)
+            file.close()
         except FileNotFoundError:
-            f = open('./data/clients.txt', 'w')
-            f.close()
-            return self.loadData()
-        str = ''
-        cont = 0
-        items = list(map(lambda x: x.row(), self.tableWidget.selectedItems()))
-        print(items)
-        for i in range(0, len(lines), 2):
-            if cont in items:
-                cont+=1
-                continue
-            cont += 1
-            str += f'{lines[i]}\n{lines[i+1]}\n'
-        f = open('./data/clients.txt', 'w')
-        f.write(str)
-        f.close()
+            file = open('./data/clients.json', 'w')
+            file_data = {"clients":[]}
+            json.dump(file_data, file, indent=4)
+            file.close()
+            return self.deleteClients()
         dlg = QtWidgets.QMessageBox(self)
         dlg.setWindowTitle('Sucesso')
         dlg.setText('O campo foi deletado com sucesso!' if len(items) == 1 else 'Os campos foram deletados com sucesso!')
@@ -132,25 +127,25 @@ class ListClientsWidget(QtWidgets.QWidget):
         dlg.exec()
         self.loadData()
 
-
     def loadData(self):
         self.tableWidget.setRowCount(0)
         try:
-            f = open('./data/clients.txt', 'r')
-            lines = f.readlines()
-            lines = list(map(lambda x: x.replace('\n', ''), lines))
+            f = open('./data/clients.json', 'r+')
+            lines = json.load(f)['clients']
             f.close()
+
         except FileNotFoundError:
-            f = open('./data/clients.txt', 'w')
-            f.close()
+            file = open('./data/clients.json', 'w')
+            file_data = {"clients": []}
+            json.dump(file_data, file, indent=4)
+            file.close()
             return self.loadData()
-        self.tableWidget.setRowCount(int(len(lines)/2))
+        self.tableWidget.setRowCount(len(lines))
         cont = 0
-        for i in range(0, len(lines), 2):
-            client = Client(name=lines[i], age=lines[i+1], id=cont)
-            self.tableWidget.setItem(cont, 0, QtWidgets.QTableWidgetItem(f'{client.id}'))
-            self.tableWidget.setItem(cont, 1, QtWidgets.QTableWidgetItem(client.name))
-            self.tableWidget.setItem(cont, 2, QtWidgets.QTableWidgetItem(client.age))
+        for client in lines:
+            self.tableWidget.setItem(cont, 0, QtWidgets.QTableWidgetItem(f'{cont}'))
+            self.tableWidget.setItem(cont, 1, QtWidgets.QTableWidgetItem(client['name']))
+            self.tableWidget.setItem(cont, 2, QtWidgets.QTableWidgetItem(f'{client["age"]}'))
             cont += 1
 
 

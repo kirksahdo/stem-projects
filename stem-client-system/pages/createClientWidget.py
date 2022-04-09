@@ -1,5 +1,6 @@
 from PyQt6 import QtCore, QtWidgets
 from model.client import Client
+import json
 
 class CreateClientWidget(QtWidgets.QWidget):
 
@@ -91,9 +92,16 @@ class CreateClientWidget(QtWidgets.QWidget):
             return
         try:
             client.age = int(client.age)
-            file = open('./data/clients.txt', 'a')
-            file.write(f'{client.name}\n{client.age}\n')
-            file.close()
+            client_dict = {"name":client.name, "age":client.age}
+            with open('./data/clients.json', 'r+') as file:
+                file_data = json.load(file)
+                file_data['clients'].append(client_dict)
+                file.seek(0)
+                json.dump(file_data, file, indent=4)
+                file.close()
+            ##file = open('./data/clients.json', 'a')
+            ##file.write(client_dict)
+            ##file.close()
             dlg = QtWidgets.QMessageBox(self)
             dlg.setWindowTitle('Sucesso')
             dlg.setText('Clinte foi cadastrado com sucesso!')
